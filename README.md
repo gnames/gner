@@ -1,2 +1,2 @@
 # gner
-Global Name Entity Recognition
+Global Named Entity Recognition
