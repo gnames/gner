@@ -18,7 +18,7 @@ func Tokenize(text []rune) []Token {
 	for i, v := range text {
 		if _, ok := spaceChr[v]; ok {
 			if _, isSpace := spaceChr[text[start]]; !isSpace {
-				t := NewToken(text, start, i)
+				t := NewToken(text[start:i], start, i)
 				t.Line = line
 				if dashToken.Start > 0 {
 					t = concatenateTokens(dashToken, t)
@@ -39,7 +39,7 @@ func Tokenize(text []rune) []Token {
 		}
 	}
 	if len(text)-start > 0 {
-		t := NewToken(text, start, len(text))
+		t := NewToken(text[start:], start, len(text))
 		t.Line = line
 		res = append(res, t)
 	}
@@ -80,13 +80,7 @@ func concatenateTokens(t1 Token, t2 Token) Token {
 	} else {
 		v = append(t1Raw, t2.Raw...)
 	}
-	t := Token{
-		Line:    t1.Line,
-		Raw:     v,
-		Start:   t1.Start,
-		End:     t2.End,
-		runeSet: make(map[rune]struct{}),
-	}
-	t.clean()
+	t := NewToken(v, t1.Start, t2.End)
+	t.Line = t1.Line
 	return t
 }

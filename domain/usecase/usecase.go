@@ -17,6 +17,6 @@ func (g gner) Run() error {
 }
 
 func (g gner) Version() string {
-	ver := fmt.Sprintf("\n\nversion: %s\nbuild: %s\n\n", Version, Build)
+	ver := fmt.Sprintf("\n\nversion: %s\n\n", Version)
 	return ver
 }

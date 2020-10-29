@@ -1,6 +1,5 @@
 package usecase
 
 var (
-	Version string
-	Build   string
+	Version = "v0.0.1"
 )
