@@ -1,17 +1,30 @@
 package txt
 
-type OutputVolumeNER interface {
-	VolumeID() string
-	OutputPages() []OutputPageNER
+type VolumeNER interface {
+	GetID() string
+	SetPages(pages []PageNER)
+	GetPages() []PageNER
 	Formatter
 }
 
-type OutputPageNER interface {
-	PageID() string
+type PageNER interface {
+	GetID() string
+	TextNER
+}
+
+type TextNER interface {
+	GetText() []rune
+
+	SetLines(lines map[int]int)
+	GetLines() map[int]int
+
+	SetEntities(ents []EntityNER)
+	GetEntities() []EntityNER
+
 	Formatter
 }
 
-type OutputNER interface {
+type EntityNER interface {
 	Formatter
 }
 
