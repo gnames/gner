@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gnames/gnlib/encode"
+	"github.com/gnames/gnfmt"
 )
 
 // Token represents a word separated by spaces in a text. Words split by new
@@ -45,7 +45,7 @@ type Token struct {
 	Features map[string]Feature
 }
 
-// Properties is a fixed set of general properties determined durint the
+// Properties is a fixed set of general properties determined during the
 // the text traversal.
 type Properties struct {
 	// HasStartParens token starts with '('.
@@ -57,7 +57,7 @@ type Properties struct {
 	// HasStartSqParens token starts with '['.
 	HasStartSqParens bool
 
-	// HasEndSqParens token end with ']'.
+	// HasEndSqParens token ends with ']'.
 	HasEndSqParens bool
 
 	// HasEndDot token ends with '.'
@@ -178,7 +178,7 @@ func (t *Token) clean() {
 
 // ToJSON serializes token to JSON string
 func (t *Token) ToJson() ([]byte, error) {
-	enc := encode.GNjson{}
+	enc := gnfmt.GNjson{}
 	tj := TokenJSON{
 		Line:    t.Line,
 		Raw:     string(t.Raw),

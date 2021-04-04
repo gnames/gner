@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gnames/gner/domain/entity/token"
+	"github.com/gnames/gner/ent/token"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -91,7 +91,7 @@ func TestProperties(t *testing.T) {
 
 func TestJSON(t *testing.T) {
 	data := parseTestdataFile(t)
-	text, err := ioutil.ReadFile("../../../testdata/tokenize.txt")
+	text, err := ioutil.ReadFile("../../testdata/tokenize.txt")
 	assert.Nil(t, err)
 	res := token.Tokenize([]rune(string((text))))
 	for i, token := range res {
@@ -102,7 +102,7 @@ func TestJSON(t *testing.T) {
 }
 
 func parseTestdataFile(t *testing.T) []string {
-	text, err := ioutil.ReadFile("../../../testdata/tokenize.json")
+	text, err := ioutil.ReadFile("../../testdata/tokenize.json")
 	assert.Nil(t, err)
 	return strings.Split(string(text), "\n")
 }
