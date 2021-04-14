@@ -10,25 +10,29 @@ var spaceChr = map[rune]bool{
 }
 
 // Tokenize creates a slice containing tokens for every word in the document.
-func Tokenize(text []rune) []Token {
+func Tokenize(text []rune, wrapToken func(TokenNER) TokenNER) []TokenNER {
 	var line int
-	var res []Token
+	var res []TokenNER
 	start := 0
-	dashToken := Token{}
+	dashToken := tokenNER{}
 	for i, v := range text {
 		if _, ok := spaceChr[v]; ok {
 			if _, isSpace := spaceChr[text[start]]; !isSpace {
-				t := NewToken(text[start:i], start, i)
-				t.Line = line
-				if dashToken.Start > 0 {
-					t = concatenateTokens(dashToken, t)
-					dashToken.Start = 0
-					res = append(res, t)
+				t := tokenNER{
+					raw:   text[start:i],
+					start: start,
+					end:   i,
+				}
+				t.line = line
+				if dashToken.start > 0 {
+					t := concatenateTokens(dashToken, t)
+					dashToken.start = 0
+					res = addToken(res, &t, wrapToken)
 				} else {
 					if lineEndsWithDash(text, i, t) {
 						dashToken = t
 					} else {
-						res = append(res, t)
+						res = addToken(res, &t, wrapToken)
 					}
 				}
 			}
@@ -39,17 +43,32 @@ func Tokenize(text []rune) []Token {
 		}
 	}
 	if len(text)-start > 0 {
-		t := NewToken(text[start:], start, len(text))
-		t.Line = line
-		res = append(res, t)
+		var t tokenNER = tokenNER{
+			line:  line,
+			raw:   text[start:],
+			start: start,
+			end:   len(text),
+		}
+		res = addToken(res, &t, wrapToken)
 	}
 	return res
 }
 
-func lineEndsWithDash(text []rune, i int, t Token) bool {
+func addToken(
+	tokens []TokenNER,
+	token TokenNER,
+	wrapToken func(TokenNER) TokenNER,
+) []TokenNER {
+	tWrapped := wrapToken(token)
+	tWrapped.ProcessRaw()
+	tokens = append(tokens, tWrapped)
+	return tokens
+}
+
+func lineEndsWithDash(text []rune, i int, t tokenNER) bool {
 	dash := rune('-')
-	l := len(t.Raw)
-	if l > 1 && t.Raw[l-1] == dash && lastWordForLine(text, i) {
+	l := len(t.raw)
+	if l > 1 && t.raw[l-1] == dash && lastWordForLine(text, i) {
 		return true
 	}
 	return false
@@ -71,16 +90,20 @@ func lastWordForLine(text []rune, i int) bool {
 	}
 }
 
-func concatenateTokens(t1 Token, t2 Token) Token {
+func concatenateTokens(t1 tokenNER, t2 tokenNER) tokenNER {
 	var v []rune
-	t1Raw := make([]rune, len(t1.Raw))
-	copy(t1Raw, t1.Raw)
-	if t2.Raw[0] >= rune('a') && t2.Raw[0] <= rune('z') {
-		v = append(t1Raw[0:len(t1Raw)-1], t2.Raw...)
+	t1Raw := make([]rune, len(t1.raw))
+	copy(t1Raw, t1.raw)
+	if t2.raw[0] >= rune('a') && t2.raw[0] <= rune('z') {
+		v = append(t1Raw[0:len(t1Raw)-1], t2.raw...)
 	} else {
-		v = append(t1Raw, t2.Raw...)
+		v = append(t1Raw, t2.raw...)
 	}
-	t := NewToken(v, t1.Start, t2.End)
-	t.Line = t1.Line
+	t := tokenNER{
+		raw:   v,
+		start: t1.start,
+		end:   t2.end,
+	}
+	t.line = t1.line
 	return t
 }

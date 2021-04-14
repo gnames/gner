@@ -7,28 +7,28 @@ import (
 	"github.com/gnames/gnfmt"
 )
 
-// Token represents a word separated by spaces in a text. Words split by new
+// tokenNER represents a word separated by spaces in a text. Words split by new
 // lines are concatenated.
-type Token struct {
-	// Line line number in the text
-	Line int
+type tokenNER struct {
+	// line line number in the text
+	line int
 
-	// Raw is a verbatim presentation of a token as it appears in a text.
-	Raw []rune
+	// raw is a verbatim presentation of a token as it appears in a text.
+	raw []rune
 
-	// Start is the index of the first rune of a token. The first rune
+	// start is the index of the first rune of a token. The first rune
 	// does not have to be alpha-numeric.
-	Start int
+	start int
 
-	// End is the index of the last rune of a token. The last rune does not
+	// end is the index of the last rune of a token. The last rune does not
 	// have to be alpha-numeric.
-	End int
+	end int
 
 	// runeSet provides runes that exist in the token
 	runeSet map[rune]struct{}
 
-	// Cleaned is a presentation of a token after normalization.
-	Cleaned string
+	// cleaned is a presentation of a token after normalization.
+	cleaned string
 
 	// cleanedStart is the first rune of cleaned token
 	cleanedStart int
@@ -36,13 +36,9 @@ type Token struct {
 	// cleanedEnd is the last rune of clenaed token
 	cleanedEnd int
 
-	// Properties is a fixed set of general properties that we determine during
+	// properties is a fixed set of general properties that we determine during
 	// the text traversal.
-	Properties
-
-	// Features is the map of features as values with their string
-	// representations as keys.
-	Features map[string]Feature
+	properties *Properties
 }
 
 // Properties is a fixed set of general properties determined during the
@@ -79,6 +75,10 @@ type Properties struct {
 	// HasSpecialChars internal part of a token includes non-letters, non-digits.
 	HasSpecialChars bool
 
+	// IsCapitalized is true if the furst letter of a token is capitalized.
+	// The first letter does not have to be the first character.
+	IsCapitalized bool
+
 	// IsNumber internal part of a token has only numbers.
 	IsNumber bool
 
@@ -95,69 +95,92 @@ type TokenJSON struct {
 	End     int    `json:"end"`
 }
 
-// NewToken constructs a new Token object.
-func NewToken(raw []rune, start int, end int, feat ...Feature) Token {
-	t := Token{
-		Raw:     raw,
-		Start:   start,
-		End:     end,
-		runeSet: make(map[rune]struct{}),
-	}
-	t.clean()
-	t.properties()
-
-	for _, feature := range feat {
-		feature.Analyse(&t)
-		t.Features[feature.String()] = feature
-	}
-	return t
+func (t *tokenNER) Line() int {
+	return t.line
 }
 
-// properties examines token and determines its properties.
-func (t *Token) properties() {
-	t.HasStartParens = t.Raw[0] == rune('(')
-	t.HasEndParens = t.Raw[len(t.Raw)-1] == rune(')')
-	t.HasStartSqParens = t.Raw[0] == rune('[')
-	t.HasEndSqParens = t.Raw[len(t.Raw)-1] == rune(']')
-	t.HasEndDot = t.Raw[len(t.Raw)-1] == rune('.')
-	t.HasEndComma = t.Raw[len(t.Raw)-1] == rune(',')
-	for _, v := range t.Cleaned {
+func (t *tokenNER) SetLine(i int) {
+	t.line = i
+}
+
+func (t *tokenNER) Raw() []rune {
+	return t.raw
+}
+
+func (t *tokenNER) Start() int {
+	return t.start
+}
+
+func (t *tokenNER) End() int {
+	return t.end
+}
+
+func (t *tokenNER) Cleaned() string {
+	return t.cleaned
+}
+
+func (t *tokenNER) SetCleaned(s string) {
+	t.cleaned = s
+}
+
+func (t *tokenNER) Properties() *Properties {
+	return t.properties
+}
+
+func (t *tokenNER) SetProperties(p *Properties) {
+	t.properties = p
+}
+
+// CalculateProperties takes raw and cleaned values of a token and computes
+// properties of these values, saving them into Properties object.
+func CalculateProperties(raw, cleaned []rune, p *Properties) {
+	p.HasStartParens = raw[0] == rune('(')
+	p.HasEndParens = raw[len(raw)-1] == rune(')')
+	p.HasStartSqParens = raw[0] == rune('[')
+	p.HasEndSqParens = raw[len(raw)-1] == rune(']')
+	p.HasEndDot = raw[len(raw)-1] == rune('.')
+	p.HasEndComma = raw[len(raw)-1] == rune(',')
+	for _, v := range cleaned {
 		if v == rune('-') {
-			t.HasDash = true
+			p.HasDash = true
 		}
 
-		if !t.HasLetters && unicode.IsLetter(v) {
-			t.HasLetters = true
+		if !p.HasLetters && unicode.IsLetter(v) {
+			p.HasLetters = true
 			continue
 		}
 
-		if !t.HasDigits && unicode.IsDigit(v) {
-			t.HasDigits = true
+		if !p.HasDigits && unicode.IsDigit(v) {
+			p.HasDigits = true
 			continue
 		}
 
-		if !t.HasSpecialChars && v == rune('�') {
-			t.HasSpecialChars = true
+		if !p.HasSpecialChars && v == rune('�') {
+			p.HasSpecialChars = true
 			continue
 		}
 	}
 
-	if t.HasDigits && !t.HasLetters && !t.HasSpecialChars && !t.HasDash {
-		t.IsNumber = true
-		return
+	if p.HasDigits && !p.HasLetters && !p.HasSpecialChars && !p.HasDash {
+		p.IsNumber = true
 	}
 
-	if t.HasLetters && !t.HasDigits && !t.HasSpecialChars {
-		t.IsWord = true
+	if p.HasLetters && !p.HasDigits && !p.HasSpecialChars {
+		p.IsWord = true
 	}
 }
 
-// clean converts a verbatim (Raw) string of a token into normalized cleaned up
-// version.
-func (t *Token) clean() {
-	var res []rune
+func (t *tokenNER) ProcessRaw() {
+	t.normalizeRaw()
+	t.properties = &Properties{}
+	CalculateProperties(t.raw, []rune(t.cleaned), t.properties)
+}
+
+func (t *tokenNER) normalizeRaw() {
+	var runes []rune
+	t.runeSet = make(map[rune]struct{})
 	firstLetter := true
-	for i, v := range t.Raw {
+	for i, v := range t.raw {
 		t.runeSet[v] = struct{}{}
 		hasDash := v == rune('-')
 		if unicode.IsLetter(v) || unicode.IsNumber(v) || hasDash {
@@ -166,25 +189,25 @@ func (t *Token) clean() {
 				firstLetter = false
 			}
 			t.cleanedEnd = i
-			res = append(res, v)
+			runes = append(runes, v)
 		} else {
 			t.runeSet['�'] = struct{}{}
-			res = append(res, rune('�'))
+			runes = append(runes, rune('�'))
 		}
 	}
-	t.Cleaned = string(res)
-	t.Cleaned = strings.Trim(t.Cleaned, "�")
+	res := string(runes)
+	t.cleaned = strings.Trim(res, "�")
 }
 
 // ToJSON serializes token to JSON string
-func (t *Token) ToJson() ([]byte, error) {
+func (t *tokenNER) ToJSON() ([]byte, error) {
 	enc := gnfmt.GNjson{}
 	tj := TokenJSON{
-		Line:    t.Line,
-		Raw:     string(t.Raw),
-		Cleaned: string(t.Cleaned),
-		Start:   t.Start,
-		End:     t.End,
+		Line:    t.line,
+		Raw:     string(t.raw),
+		Cleaned: string(t.cleaned),
+		Start:   t.start,
+		End:     t.end,
 	}
 	return enc.Encode(tj)
 }
