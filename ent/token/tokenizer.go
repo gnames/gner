@@ -60,7 +60,7 @@ func addToken(
 	wrapToken func(TokenNER) TokenNER,
 ) []TokenNER {
 	tWrapped := wrapToken(token)
-	tWrapped.ProcessRaw()
+	tWrapped.ProcessToken()
 	tokens = append(tokens, tWrapped)
 	return tokens
 }

@@ -26,17 +26,7 @@ type TokenNER interface {
 	// SetCleaned substitues existing cleaned text with a new one.
 	SetCleaned(string)
 
-	// Properties is a fixed set of general properties that we determine during
-	// the text traversal.
-	Properties() *Properties
-
-	// SetProperties substitutes existing properties with new ones.
-	SetProperties(*Properties)
-
-	// ProcessRaw computes a clean version of a name as well as properties
+	// ProcessToken computes a clean version of a name as well as properties
 	// of the token.
-	ProcessRaw()
-
-	// ToJSON converts TokenNER object into JSON represenation
-	ToJSON() ([]byte, error)
+	ProcessToken()
 }
