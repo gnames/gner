@@ -2,11 +2,12 @@ package token
 
 // space chars that indicate new line have value true
 var spaceChr = map[rune]bool{
-	'\n': true,
-	'\r': true,
-	'\v': false,
-	'\t': false,
-	' ':  false,
+	'\n':     true,
+	'\r':     true,
+	'\v':     false,
+	'\t':     false,
+	'\uFEFF': false,
+	' ':      false,
 }
 
 // Tokenize creates a slice containing tokens for every word in the document.
@@ -19,13 +20,18 @@ func Tokenize(text []rune, wrapToken func(TokenNER) TokenNER) []TokenNER {
 		if _, ok := spaceChr[v]; ok {
 			if _, isSpace := spaceChr[text[start]]; !isSpace {
 				t := tokenNER{
-					raw:   text[start:i],
-					start: start,
-					end:   i,
+					line:         line,
+					raw:          text[start:i],
+					start:        start,
+					end:          i,
+					runeSet:      map[rune]struct{}{},
+					cleaned:      "",
+					cleanedStart: start,
+					cleanedEnd:   0,
 				}
 				t.line = line
 				if dashToken.start > 0 {
-					t := concatenateTokens(dashToken, t)
+					t = concatenateTokens(dashToken, t)
 					dashToken.start = 0
 					res = addToken(res, &t, wrapToken)
 				} else {
@@ -36,16 +42,14 @@ func Tokenize(text []rune, wrapToken func(TokenNER) TokenNER) []TokenNER {
 					}
 				}
 			}
-			if v != '\uFEFF' {
-				start = i + 1
-			}
+			start = i + 1
 			if v == '\n' {
 				line++
 			}
 		}
 	}
 	if len(text)-start > 0 {
-		var t tokenNER = tokenNER{
+		t := tokenNER{
 			line:  line,
 			raw:   text[start:],
 			start: start,
