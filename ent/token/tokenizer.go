@@ -36,7 +36,9 @@ func Tokenize(text []rune, wrapToken func(TokenNER) TokenNER) []TokenNER {
 					}
 				}
 			}
-			start = i + 1
+			if v != '\uFEFF' {
+				start = i + 1
+			}
 			if v == '\n' {
 				line++
 			}

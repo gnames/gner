@@ -39,6 +39,16 @@ func TestTokenizeUTF(t *testing.T) {
 	assert.Equal(t, res[1].Cleaned(), "wörl'd")
 }
 
+func TokenizeBOM(t *testing.T) {
+	text := []rune{'\uFEFF', 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'}
+	res := token.Tokenize(text, wrapToken)
+	assert.Equal(t, len(res), 2)
+	assert.Equal(t, res[0].Line(), 0)
+	assert.Equal(t, res[0].Start(), 0)
+	assert.Equal(t, res[1].Line(), 0)
+	assert.Equal(t, res[1].Start(), 6)
+}
+
 func TestTokenizeLines(t *testing.T) {
 	text := []rune("h€llö \nwörld")
 	res := token.Tokenize(text, wrapToken)
