@@ -1,6 +1,7 @@
 package token_test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -81,4 +82,16 @@ func parseTestdataFile(t *testing.T) []string {
 
 func wrapToken(token token.TokenNER) token.TokenNER {
 	return token
+}
+
+func Example() {
+	text := "one\vtwo Poma-  \t\r\n tomus " +
+		"dash -\nstandalone " +
+		"Tora-\nBora\n\rthree 1778,\n"
+	res := token.Tokenize([]rune(text), wrapToken)
+	fmt.Println(res[0].Cleaned())
+	fmt.Println(res[2].Cleaned())
+	// Output:
+	// one
+	// Pomatomus
 }
