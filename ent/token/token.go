@@ -42,10 +42,12 @@ func (t *tokenNER) Raw() []rune {
 	return t.raw
 }
 
+// Offset in runes to the start of the token (raw).
 func (t *tokenNER) Start() int {
 	return t.start
 }
 
+// Offset in runes to the end of the token (raw).
 func (t *tokenNER) End() int {
 	return t.end
 }

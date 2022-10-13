@@ -2,12 +2,18 @@ package token
 
 // space chars that indicate new line have value true
 var spaceChr = map[rune]bool{
-	'\n':     true,
-	'\r':     true,
-	'\v':     false,
-	'\t':     false,
+	'\n': true,
+	'\r': true,
+	'\v': false,
+	'\t': false,
+	// BOM
 	'\uFEFF': false,
-	' ':      false,
+	// 'normal' space
+	'\u0020': false,
+	// 'no-break' space
+	'\u00A0': false,
+	// wide space
+	'\u3000': false,
 }
 
 // Tokenize creates a slice containing tokens for every word in the document.
