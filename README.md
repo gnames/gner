@@ -1,5 +1,7 @@
 # gner
 
+[![DOI](https://zenodo.org/badge/306673142.svg)](https://doi.org/10.5281/zenodo.14262551)
+
 Global Named Entity Recognition
 
 This project provides libraries that a shared between different named entity
